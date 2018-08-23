@@ -91,14 +91,15 @@ class User extends Model {
     }
     
     public function get($iduser)
-    {
-        $sql= new Sql();
-       $results= $sql->select("SELECT * FROM tb_users a INNER JOIN tb_persons b USING(idperson) WHERE a.iduser = :iduser", array(
-            ":iduser"=>$iduser
-        ));
-       
-       $this->setData($results[0]);
-    }
+	{
+		$sql = new Sql();
+		$results = $sql->select("SELECT * FROM tb_users a INNER JOIN tb_persons b USING(idperson) WHERE a.iduser = :iduser", array(
+			":iduser"=>$iduser
+		));
+		$data = $results[0];
+		$data['desperson'] = utf8_encode($data['desperson']);
+		$this->setData($data);
+	}
     
     public function update()
     {
@@ -169,6 +170,53 @@ class User extends Model {
             }
         }
     }
+    
+    public static function validForgotDecrypt($code)
+    {
+        base64_decode($code); 
+        
+        $iv= random_bytes(openssl_cipher_iv_length('aes-256-cbc'));        
+        $idrecovery= openssl_decrypt(base64_decode($code), 'aes-256-cbc', User::SECRET, 0, $iv);
+        
+        $sql=new Sql();
+        $results = $sql->select("
+            SELECT *
+            FROM tb_userspasswordsrecoveries a
+            INNER JOIN tb_users b USING(iduser)
+            INNER JOIN tb_persons c USING (idperson)
+            WHERE 
+            a.idrecovery = :idrecovery
+            AND
+            a.dtrecovery IS NULL
+            AND 
+            DATE_ADD(a.dtregister, INTERVAL 1 HOUR)>=NOW();
+            ", array(
+                ":idrecovery"=>$idrecovery
+            ));
+        if(count($results)===0){
+            header("Location:/admin/forgot");
+        }else{
+            return $results[0];
+        }       
+    }
+    
+    public static function setForgotUsed($idrecovery)
+    {
+        $sql = new Sql();
+        $sql->query("UPDATE tb_userspasswordrecoveries SET dtrecovery = NOW() WHERE idrecovery=:idrecovery", array(
+            ":idrecovery"=>$idrecovery
+        ));
+    }
+    
+    public function setPassword($password)
+	{
+		$sql = new Sql();
+		$sql->query("UPDATE tb_users SET despassword = :password WHERE iduser = :iduser", array(
+			":password"=>$password,
+			":iduser"=>$this->getiduser()
+		));
+	}
+    
 }
 
 ?>

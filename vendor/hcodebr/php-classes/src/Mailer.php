@@ -14,9 +14,9 @@ class Mailer{
     
     public function __construct($toAddress, $toName, $subject, $tplName, $data=array())
     {
-        var_dump($tplName);
+        
 $config = array(
-"tpl_dir" => $_SERVER["DOCUMENT_ROOT"]."/views/email",
+"tpl_dir" => $_SERVER["DOCUMENT_ROOT"]."/views/email/",
 "cache_dir" => $_SERVER["DOCUMENT_ROOT"]."views-cache/",
 "debug" => false // set to false to improve the speed
 );
@@ -60,13 +60,13 @@ $this->mail->SMTPSecure = 'tls';
 $this->mail->SMTPAuth = true;
 
 //Username to use for SMTP authentication - use full email address for gmail
-$this->mail->Username = Mailer:: USERNAME;
+$this->mail->Username = Mailer::USERNAME;
 
 //Password to use for SMTP authentication
-$this->mail->Password = Mailer:: PASSWORD;
+$this->mail->Password = Mailer::PASSWORD;
 
 //Set who the message is to be sent from
-$this->mail->setFrom(Mailer:: USERNAME, Mailer:: NAME_FROM);
+$this->mail->setFrom(Mailer::USERNAME, Mailer::NAME_FROM);
 
 //Set an alternative reply-to address
 //$this->mail->addReplyTo('norberto.mgjunior@gmail.com', 'Norberto Junior');
