@@ -81,7 +81,7 @@ class User extends Model {
         $results = $sql->select("CALL sp_users_save(:desperson, :deslogin, :despassword, :desemail, :nrphone, :inadmin)", array(
           ":desperson"=> $this->getdesperson(),
           ":deslogin"=>$this->getdeslogin(),
-          ":despassword"=> $this->getdespassword(),
+          ":despassword"=>password_hash($this->getdespassword(), PASSWORD_DEFAULT, ['cost'=>12]),
           ":desemail"=> $this->getdesemail(),
           ":nrphone"=> $this->getnrphone(),
           ":inadmin"=> $this->getinadmin()
@@ -171,12 +171,15 @@ class User extends Model {
         }
     }
     
-    public static function validForgotDecrypt($code)
-    {
-        base64_decode($code); 
+    public static function validForgotDecrypt($result)
+{
+ $result = base64_decode($result);
+ $code = mb_substr($result, openssl_cipher_iv_length('aes-256-cbc'), null, '8bit');
+ $iv = mb_substr($result, 0, openssl_cipher_iv_length('aes-256-cbc'), '8bit');
+ 
+ $idrecovery = openssl_decrypt($code, 'aes-256-cbc', User::SECRET, 0, $iv);
         
-        $iv= random_bytes(openssl_cipher_iv_length('aes-256-cbc'));        
-        $idrecovery= openssl_decrypt(base64_decode($code), 'aes-256-cbc', User::SECRET, 0, $iv);
+        
         
         $sql=new Sql();
         $results = $sql->select("
@@ -193,8 +196,8 @@ class User extends Model {
             ", array(
                 ":idrecovery"=>$idrecovery
             ));
-        if(count($results)===0){
-            header("Location:/admin/forgot");
+        if(count($results)==0){
+            return 0;
         }else{
             return $results[0];
         }       
